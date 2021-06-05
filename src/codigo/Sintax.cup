@@ -1,0 +1,304 @@
+package codigo;
+
+
+import java_cup.runtime.Symbol;
+
+
+parser code
+{:
+    public String resultado = "";
+    private Symbol s;
+    
+    public void syntax_error(Symbol s){
+        this.s = s;
+    }
+
+    public Symbol getS(){
+        return this.s;
+}
+:};
+
+
+terminal  
+InicioHtml, Digito, NDecimal, SignoMas, SignoMenos, DosPuntos, SignoMulti, PuntoComa, Comillas,
+InicioHead, InicioTitle, FinTitle, FinHead, InicioBody, InicioTable, InicioTr, InicioTh, SignoIgual, ParA,
+TextoGeneral, URL, Texto, ParC, FinTh, FinTr, FinTable, InicioTextoB, FinTextoB, SalidaTexto, InicioList,
+Coma, InicioLi, FinLi, FinList, Enlace, InicioImg, Correo, FinImg, FinBody, FinHtml, Error;
+
+/*===Definir los no terminales:*/
+
+non terminal Inicio, encabezado, cuerpo, tablas, columnas, operaciones, interno, internoMixto,
+             listas, imagenes, enlaces, estructuraTablas, internoColumna, correos, estructuraLista, signosOp,
+             numeroG, combinaciones, negrita;
+
+
+start with Inicio;
+
+            Inicio ::= InicioHtml:a cuerpo:b FinHtml:c
+                       {:
+                         resultado = "<HTML>\n" + String.valueOf(b) + "</HTML> \n";   
+                       :};
+
+            cuerpo ::= encabezado:a InicioBody:b  internoMixto:c FinBody:d
+                       {:
+                         RESULT = String.valueOf(a) + "<BODY> \n" + String.valueOf(c) + "</BODY> \n";
+               	       :};
+
+
+          encabezado ::=InicioHead InicioTitle SignoIgual TextoGeneral:a FinTitle FinHead
+                        {:
+                          RESULT = "<HEAD>\n" + "<TITLE>" + String.valueOf(a) + "</TITLE>" + "</HEAD>";
+                        :}
+ 
+
+
+      |    InicioHead InicioTitle SignoIgual TextoGeneral:a FinHead
+                        {:
+                          RESULT = "<HEAD> \n" + "<TITLE> \n" +  String.valueOf(a) + "</HEAD>  \n";
+                        :}
+
+
+      |    InicioHead:a InicioTitle:b SignoIgual Comillas TextoGeneral:c Comillas FinHead:d
+                        {:
+                          RESULT = "<HEAD>\n" + "<TITLE>" + String.valueOf(c) + "</HEAD>";
+                        :}
+      | InicioHead:a InicioTitle:b SignoIgual Comillas TextoGeneral:e Comillas FinTitle:c FinHead:d
+                        {:
+                          RESULT = "<HEAD>\n" + "<TITLE>" + String.valueOf(e) + "</TITLE>" + "</HEAD>";
+                        :};
+
+            interno ::= TextoGeneral:a
+                        {:
+                          RESULT = "<p>" + String.valueOf(a) + "</p>";
+                        :}   
+
+      | imagenes:a
+                        {:
+                          RESULT = String.valueOf(a);
+                        :}
+      | tablas:a 
+                        {:
+                          RESULT = String.valueOf(a);  
+                        :}
+
+      | enlaces:a
+                        {:
+                          RESULT = String.valueOf(a);
+                        :}
+      | operaciones:a   
+                        {:
+                          RESULT = String.valueOf(a);
+                        :}
+      | listas:a        
+                        {:
+                          RESULT = String.valueOf(a);
+                        :}
+      | Texto:a         
+                        {: 
+                          RESULT = "<p>" + String.valueOf(a) + "</p>";
+                        :}
+      | Comillas:a       
+                        {:
+                          RESULT = String.valueOf(a);
+                        :}
+      | correos:a
+                        {:
+                          RESULT = String.valueOf(a); 
+                        :}
+      | Coma:a            
+                        {:
+                          RESULT = String.valueOf(a);
+                        :}
+      | negrita:a 
+                        {:
+                          RESULT = String.valueOf(a);
+                        :} 
+      |SalidaTexto:a
+                        {:
+                          RESULT = "<p>"  + String.valueOf(a) + "</p>";
+                        :}      
+      | combinaciones:a 
+                        {:
+                          RESULT = String.valueOf(a);
+                        :};
+
+
+          internoMixto ::=  interno:a 
+                        {:
+                           RESULT = String.valueOf(a);
+                        :}
+      | interno:a internoMixto:b
+                        {:
+                           RESULT = String.valueOf(a) + String.valueOf(b);
+                        :};
+
+          negrita ::= InicioTextoB TextoGeneral:a FinTextoB
+                        {:
+                           RESULT = "<b>" + String.valueOf(a) + "</b>\n";
+                        :}                     
+      | InicioTextoB Texto:a FinTextoB 
+                        {:
+                           RESULT = "<b>"+ String.valueOf(a) + "</b>\n";
+                        :} 
+      | InicioTextoB ParA:a numeroG:b ParC:c FinTextoB
+                        {:
+                           RESULT = "<b>" + String.valueOf(a) + String.valueOf(b) + String.valueOf(c)  +"</b>\n";
+                        :} 
+      | InicioTextoB ParA:a TextoGeneral:b ParC:c FinTextoB
+                        {:
+                           RESULT = "<b>" + String.valueOf(a) + String.valueOf(b) + String.valueOf(c) +  "</b>\n";
+                        :}   
+      | InicioTextoB ParA:a Texto:b ParC:c FinTextoB
+                        {:
+                           RESULT = "<b>" + String.valueOf(a) + String.valueOf(b) + String.valueOf(c) + "</b>\n";
+                        :};
+
+
+       imagenes ::= InicioImg Comillas:a Texto:b Comillas:c FinImg
+                        {:
+                           RESULT = "<IMG SRC=" + String.valueOf(a) + String.valueOf(b) + String.valueOf(c) + ">";
+                        :}
+      | InicioImg  Texto SignoIgual Comillas TextoGeneral Comillas Enlace 
+        SignoIgual Comillas:a URL:b Comillas:c Texto DosPuntos Digito  Texto DosPuntos Digito FinImg
+                         {:
+                           RESULT =  "<IMG SRC" + String.valueOf(a) + String.valueOf(b) + String.valueOf(c)  + ">";
+                         :};
+
+
+       tablas ::= InicioTable Texto SignoIgual numeroG:a estructuraTablas:b FinTable
+                          {:
+                            RESULT = "<TABLE BORDER="+a+">\n" + String.valueOf(b) + "</TABLE>\n";  
+                          :};  
+       estructuraTablas::= InicioTr columnas:a FinTr
+                           {:
+                            RESULT = "<TR>" + String.valueOf(a) + "</TR>";
+                           :}
+
+        | InicioTr columnas:a FinTr estructuraTablas:b
+                            {:
+                            RESULT = "<TR>" + String.valueOf(a) + "</TR>\n" + String.valueOf(b);
+                            :}
+;
+          columnas ::= InicioTh SignoIgual internoColumna:a FinTh
+                            {:
+                             RESULT = "<TH>" + String.valueOf(a) + "</TH>";
+                            :}
+ | InicioTh SignoIgual internoColumna:a FinTh columnas:b
+                            {:
+                             RESULT = "<TH>" + String.valueOf(a) + "</TH>" + String.valueOf(b);
+                            :};
+
+          internoColumna ::= Comillas  Texto:a Comillas 
+                             {:
+                              RESULT = String.valueOf(a);
+                             :}
+| Comillas operaciones:a Comillas 
+                              {:
+                               RESULT = String.valueOf(a);
+                              :}
+| Comillas  TextoGeneral:a Comillas 
+                              {:
+                                RESULT = String.valueOf(a);
+                              :}
+| Comillas correos:a Comillas 
+                              {:
+                                RESULT = String.valueOf(a);
+                              :}
+| Comillas URL:a Comillas 
+                              {:
+                                RESULT = String.valueOf(a);
+                              :}
+| Comillas numeroG:a Comillas   
+                              {:
+                                RESULT = String.valueOf(a);
+                              :}
+|  imagenes:a                   
+                              {:
+                                RESULT = String.valueOf(a); 
+                              :} 
+| Texto:a                      {:
+                                RESULT = String.valueOf(a); 
+                              :} 
+|TextoGeneral:a               {:
+                                RESULT = String.valueOf(a); 
+                              :};
+
+
+
+
+          enlaces ::= Enlace SignoIgual Comillas:a URL:b Comillas:c
+                              {:
+                               RESULT = "<a href=" +a + b + c + ">" + "</a>";
+                              :};
+
+          correos ::= Correo:a 
+                              {:
+                                RESULT = String.valueOf(a);
+                              :}; 
+
+          listas ::= InicioList  estructuraLista:a FinList
+                               {:
+                                 RESULT = "<OL>\n" + String.valueOf(a) + "</OL>\n";
+                               :};
+
+          estructuraLista ::= InicioLi  TextoGeneral:a FinLi
+                               {:
+                                 RESULT = "<LI>" + String.valueOf(a) + "</LI>\n";
+                               :} 
+ 
+| InicioLi TextoGeneral:a FinLi  estructuraLista:b
+                               {:
+                                 RESULT = "<LI>" + String.valueOf(a) + "</LI>\n" +String.valueOf(b);
+                               :};
+
+
+
+          operaciones ::=  ParA:a numeroG:b signosOp:c numeroG:d ParC:e  
+                                {:
+                                  RESULT = String.valueOf(a) + String.valueOf(b) + String.valueOf(c) +
+                                           String.valueOf(d) + String.valueOf(e);
+                                :}
+| ParA:a numeroG:b signosOp:c numeroG:d ParC:e signosOp:f numeroG:g signosOp:h numeroG:i 
+                                {:
+                                  RESULT = String.valueOf(a) + String.valueOf(b) +  String.valueOf(c) +
+                                           String.valueOf(d) + String.valueOf(e) +  String.valueOf(f) + 
+                                           String.valueOf(g) + String.valueOf(h) +  String.valueOf(i);
+                                :}
+| ParA:a numeroG:b signosOp:c numeroG:d ParC:e signosOp:f numeroG:g  
+                                {:
+                                  RESULT =  String.valueOf(a) + String.valueOf(b) +  String.valueOf(c) +
+                                            String.valueOf(d) + String.valueOf(e) +  String.valueOf(f) + 
+                                            String.valueOf(g); 
+                                :}
+| numeroG:a signosOp:b numeroG:c      
+                                {:
+                                   RESULT = String.valueOf(a) + String.valueOf(b) +  String.valueOf(c);
+                                :}
+| SignoIgual:a numeroG:b signosOp:c numeroG:d PuntoComa:e
+                                {:
+                                   RESULT = String.valueOf(a) + String.valueOf(b) +  String.valueOf(c) +
+                                            String.valueOf(d) + String.valueOf(e);
+                                :};
+
+          numeroG ::= NDecimal:a
+                         {:
+                           RESULT = String.valueOf(a);
+                         :}
+          | Digito:a
+                         {:
+                           RESULT = String.valueOf(a);
+                         :};
+                        
+
+          signosOp ::= SignoMas:a
+                          {:
+                            RESULT = String.valueOf(a);
+                          :}
+        | SignoMenos:a      {:
+                            RESULT = String.valueOf(a);
+                          :}
+ | SignoMulti:a           {:
+                            RESULT = String.valueOf(a);
+                          :};
+
+          combinaciones ::= ParA numeroG ParC | ParA Texto ParC;
